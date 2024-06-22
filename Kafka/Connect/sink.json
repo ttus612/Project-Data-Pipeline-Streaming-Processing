@@ -1,0 +1,21 @@
+{
+  "name": "cassandra-source-connector",
+  "config": {
+    "connector.class": "com.datamountaineer.streamreactor.connect.cassandra.source.CassandraSourceConnector",
+    "tasks.max": "1",
+    "topic": "test2",
+    "key.converter": "org.apache.kafka.connect.json.JsonConverter",
+    "value.converter": "org.apache.kafka.connect.json.JsonConverter",
+    "key.converter.schemas.enable": "false",
+    "value.converter.schemas.enable": "false",
+    "cassandra.keyspace": "study_data_engineering",
+    "cassandra.contact.points": "localhost",
+    "cassandra.port": "9042",
+    "cassandra.username": "cassandra",
+    "cassandra.password": "cassandra",
+    "cassandra.consistency.level": "ONE",
+    "transforms": "createKey",
+    "transforms.createKey.type": "org.apache.kafka.connect.transforms.ValueToKey",
+    "transforms.createKey.fields": "yourPrimaryKeyField" 
+  }
+}
