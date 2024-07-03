@@ -1,4 +1,4 @@
 # Ignore logs directory
 Kafka/kafka_2.13-3.3.1/logs/
-Airflow/logs/*
+Airflow/logs/
 __pycache__
