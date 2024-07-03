@@ -25,14 +25,26 @@ from pyspark.sql.functions import udf
 from pyspark.sql.functions import monotonically_increasing_id
 from pyspark.sql.window import Window as W
 from pyspark.sql import functions as F
+from pyspark.sql.types import StructType, IntegerType, StringType
+
     
+scala_version = '2.12'  # TODO: Ensure this is correct
+spark_version = '3.5.0'
+packages = [
+    f'org.apache.spark:spark-sql-kafka-0-10_{scala_version}:{spark_version}',
+    'org.apache.kafka:kafka-clients:3.3.1'
+]
+
+package_str = ','.join(packages + ['com.datastax.spark:spark-cassandra-connector_2.12:3.1.0'])
+
+
 # spark = SparkSession.builder.config('spark.jars.packages', 'com.datastax.spark:spark-cassandra-connector_2.12:3.1.0') \
 #     .config("spark.cassandra.connection.host", "localhost") \
 #     .config("spark.cassandra.connection.port", "9042") \
 #     .config("spark.cassandra.auth.username", "cassandra") \
 #     .config("spark.cassandra.auth.password", "cassandra") \
 #     .getOrCreate()
-spark = SparkSession.builder.config('spark.jars.packages', 'com.datastax.spark:spark-cassandra-connector_2.12:3.1.0').getOrCreate()
+spark = SparkSession.builder.config('spark.jars.packages', package_str).getOrCreate()
 spark.sparkContext.setLogLevel("ERROR")
 
 def calculating_clicks(df):
@@ -161,12 +173,17 @@ def import_to_mysql(output):
     .save()
     return print('Data imported successfully')
 
+def import_to_kafka(output):
+    output.selectExpr("CAST(job_id AS STRING) AS key", "to_json(struct(*)) AS value").show()
+    output.selectExpr("CAST(job_id AS STRING) AS key", "to_json(struct(*)) AS value").write.format("kafka").option("kafka.bootstrap.servers", "localhost:9092").option("topic", "test2").save()
+    return print('Data imported successfully')
+
 def last_updated_time(df, final_output):
     last_update_time = df.select(F.max("ts")).collect()[0][0]
     final_output = final_output.withColumn("Last_Updated_At", F.lit(last_update_time))
     return final_output
 
-def main_task(mysql_time):
+def main_task():
     host = 'localhost'
     port = '3306'
     db_name = 'Data_Warehouse'
@@ -181,7 +198,7 @@ def main_task(mysql_time):
     print('------------------------------')
     print('Retrieving data from Cassandra')
     print('------------------------------')
-    df = spark.read.format("org.apache.spark.sql.cassandra").options(table="tracking",keyspace="study_data_engineering").load().filter(col('ts') > mysql_time)
+    df = spark.read.format("org.apache.spark.sql.cassandra").options(table="tracking",keyspace="study_data_engineering").load()
     print('------------------------------')
     print('Selecting data from Cassandra')
     print('------------------------------')
@@ -204,7 +221,11 @@ def main_task(mysql_time):
     print('-----------------------------')
     print('Data Final Output')
     print('-----------------------------')
-    final_output.show()
+    # join_output.show()
+    # print('-----------------------------')
+    # print('Import Output to Kafka Topic')
+    # print('-----------------------------')
+    # import_to_kafka(join_output)
     print('-----------------------------')
     print('Import Output to MySQL')
     print('-----------------------------')
@@ -240,12 +261,12 @@ while True :
     cassandra_time = get_latest_time_cassandra()
     print('--------------------------------------------------')
     print('Cassandra latest time is {}'.format(cassandra_time))
-    mysql_time = get_mysql_latest_time(url,driver,user,password)
-    print('MySQL latest time is {}'.format(mysql_time))
-    if cassandra_time > mysql_time : 
-        main_task(mysql_time)
-    else :
-        print("No new data found")
+    # mysql_time = get_mysql_latest_time(url,driver,user,password)
+    # print('MySQL latest time is {}'.format(mysql_time))
+    # if cassandra_time > mysql_time : 
+    main_task()
+    # else :
+    #     print("No new data found")
     end_time = datetime.datetime.now()
     execution_time = (end_time - start_time).total_seconds()
     print('Job takes {} seconds to execute'.format(execution_time))
