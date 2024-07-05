@@ -183,7 +183,7 @@ def last_updated_time(df, final_output):
     final_output = final_output.withColumn("Last_Updated_At", F.lit(last_update_time))
     return final_output
 
-def main_task():
+def main_task(mysql_time):
     host = 'mysql'
     port = '3306'
     db_name = 'Data_Warehouse'
@@ -198,7 +198,7 @@ def main_task():
     print('------------------------------')
     print('Retrieving data from Cassandra')
     print('------------------------------')
-    df = spark.read.format("org.apache.spark.sql.cassandra").options(table="tracking",keyspace="study_data_engineering").load()
+    df = spark.read.format("org.apache.spark.sql.cassandra").options(table="tracking",keyspace="study_data_engineering").load().filter(col('ts') > mysql_time)
     print('------------------------------')
     print('Selecting data from Cassandra')
     print('------------------------------')
@@ -261,12 +261,12 @@ start_time = datetime.datetime.now()
 cassandra_time = get_latest_time_cassandra()
 print('--------------------------------------------------')
 print('Cassandra latest time is {}'.format(cassandra_time))
-    # mysql_time = get_mysql_latest_time(url,driver,user,password)
-    # print('MySQL latest time is {}'.format(mysql_time))
-    # if cassandra_time > mysql_time : 
-main_task()
-    # else :
-    #     print("No new data found")
+mysql_time = get_mysql_latest_time(url,driver,user,password)
+print('MySQL latest time is {}'.format(mysql_time))
+if cassandra_time > mysql_time : 
+    main_task(mysql_time)
+else :
+    print("No new data found")
 end_time = datetime.datetime.now()
 execution_time = (end_time - start_time).total_seconds()
 print('Job takes {} seconds to execute'.format(execution_time))

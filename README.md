@@ -6,7 +6,7 @@ Put the raw data to Cassandra (Data Lake), PySpark for transforming the data fro
 - Tools: DataGrip, Docker Desktop, Visual Studio Code, MobaXtem, NotePad++.
 
 ## Architecture
-  ![image](Img_info_project/Diagram_Project_Data_Pipeline_for_Recruitment_Start_up.jpg)
+  ![image](Img_info_project/Diagram-Project-Data-Pipeline-Streaming-Processing.jpg)
 
 ### Raw Data
 - Log data from the website is processed near real-time into Data Lake is Cassandra.
